@@ -1,0 +1,271 @@
+{
+  "service": {
+    "service": "alert-logs",
+    "serviceObject": {
+      "name": "alert-logs"
+    },
+    "provider": {
+      "stage": "dev",
+      "region": "us-west-2",
+      "variableSyntax": "\\${([ ~:a-zA-Z0-9._'\",\\-\\/\\(\\)]+?)}",
+      "name": "aws",
+      "runtime": "python3.6",
+      "iamRoleStatements": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:GetObject",
+            "s3:PutObject",
+            "logs:DescribeLogGroups",
+            "logs:DescribeLogStreams",
+            "logs:GetLogEvents",
+            "sns:Publish"
+          ],
+          "Resource": "*"
+        }
+      ],
+      "timeout": 10,
+      "environment": {
+        "ALERT_LOG_BUCKET": "alert-logs",
+        "ALERT_LOG_KEY": "last_alert_updated_time",
+        "ALERT_LOG_PATTERN": "Exception|Error",
+        "ALERT_LOG_TOPIC_ARN": "arn:aws:sns:us-west-2:381354997016:tmp_mail_test",
+        "ALERT_LOG_SUBJECT": "subject for cloudwatch alert."
+      },
+      "versionFunctions": true,
+      "remoteFunctionData": null,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket"
+          },
+          "AlertLogsLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/alert-logs-dev-alertLogs"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "dev",
+                        "alert-logs",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/alert-logs-dev-alertLogs:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/alert-logs-dev-alertLogs:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:GetObject",
+                          "s3:PutObject",
+                          "logs:DescribeLogGroups",
+                          "logs:DescribeLogStreams",
+                          "logs:GetLogEvents",
+                          "sns:Publish"
+                        ],
+                        "Resource": "*"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "alert-logs",
+                    "dev",
+                    "us-west-2",
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "AlertLogsLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/alert-logs/dev/1515403424591-2018-01-08T09:23:44.591Z/alert-logs.zip"
+              },
+              "FunctionName": "alert-logs-dev-alertLogs",
+              "Handler": "src/alert_logs.lambda_handler_alert_logs",
+              "MemorySize": 1024,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              },
+              "Runtime": "python3.6",
+              "Timeout": 300,
+              "Environment": {
+                "Variables": {
+                  "ALERT_LOG_BUCKET": "alert-logs",
+                  "ALERT_LOG_KEY": "last_alert_updated_time",
+                  "ALERT_LOG_PATTERN": "Exception|Error",
+                  "ALERT_LOG_TOPIC_ARN": "arn:aws:sns:us-west-2:381354997016:tmp_mail_test",
+                  "ALERT_LOG_SUBJECT": "subject for cloudwatch alert."
+                }
+              }
+            },
+            "DependsOn": [
+              "AlertLogsLogGroup",
+              "IamRoleLambdaExecution"
+            ]
+          },
+          "AlertLogsLambdaVersionDY2G34hBwCNBQoeEXy5R1bMHAqihuNzj7k4BEHpxg": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "AlertLogsLambdaFunction"
+              },
+              "CodeSha256": "DY2/G34hBwCNBQoeEXy5R1bMHAqihuNzj7k4B+EHpxg="
+            }
+          },
+          "AlertLogsEventsRuleSchedule1": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+              "ScheduleExpression": "rate(1 hours)",
+              "State": "ENABLED",
+              "Targets": [
+                {
+                  "Arn": {
+                    "Fn::GetAtt": [
+                      "AlertLogsLambdaFunction",
+                      "Arn"
+                    ]
+                  },
+                  "Id": "alertLogsSchedule"
+                }
+              ]
+            }
+          },
+          "AlertLogsLambdaPermissionEventsRuleSchedule1": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "AlertLogsLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "events.amazonaws.com",
+              "SourceArn": {
+                "Fn::GetAtt": [
+                  "AlertLogsEventsRuleSchedule1",
+                  "Arn"
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          },
+          "AlertLogsLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "AlertLogsLambdaVersionDY2G34hBwCNBQoeEXy5R1bMHAqihuNzj7k4BEHpxg"
+            }
+          }
+        }
+      },
+      "coreCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket"
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "functions": {
+      "alertLogs": {
+        "handler": "src/alert_logs.lambda_handler_alert_logs",
+        "events": [
+          {
+            "schedule": "rate(1 hours)"
+          }
+        ],
+        "timeout": 300,
+        "name": "alert-logs-dev-alertLogs",
+        "package": {},
+        "vpc": {}
+      }
+    },
+    "artifact": "C:\\work\\serverless\\alert_logs\\.serverless\\alert-logs.zip"
+  },
+  "package": {
+    "artifactDirectoryName": "serverless/alert-logs/dev/1515403424591-2018-01-08T09:23:44.591Z",
+    "artifact": "alert-logs.zip"
+  }
+}
