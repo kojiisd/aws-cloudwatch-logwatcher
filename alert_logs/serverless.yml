@@ -65,7 +65,7 @@ functions:
   alertLogs:
     handler: src/alert_logs.lambda_handler_alert_logs
     events:
-      - schedule: rate(1 hours)
+      - schedule: rate(1 hour)
     timeout: 300
 
 #      - s3: ${env:BUCKET}
@@ -107,7 +107,7 @@ resources:
 
     ### CloudWatch Logs ###
 
-    alertLogsLogGroup:
+    AlertLogsLogGroup:
       Properties:
         RetentionInDays: 7
 
