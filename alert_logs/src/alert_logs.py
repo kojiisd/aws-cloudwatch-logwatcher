@@ -3,10 +3,9 @@ import logging
 import os
 
 from src.cloudwatch_logs import get_all_logs
-from src.common_util import CHANGE_LINE, get_sns_client
+from src.common_util import CHANGE_LINE, get_sns_client, init_logger
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = init_logger()
 
 
 def lambda_handler_alert_logs(event, context):

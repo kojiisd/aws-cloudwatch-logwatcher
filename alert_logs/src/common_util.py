@@ -1,5 +1,7 @@
 import time
 import boto3
+import os
+import logging
 
 CHANGE_LINE = '\r\n'
 
@@ -25,3 +27,15 @@ def get_sns_client():
     client = boto3.session.Session().client('sns')
     return client
 
+
+def init_logger():
+    """
+    Lambda上で実行する際に、DynamoDB接続ログなど不要なログを出力しないようにする。
+
+    :return: ログ出力オブジェクト
+    """
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO if 'LOG_LEVEL' not in os.environ else int(os.environ['LOG_LEVEL']))
+    logging.getLogger('botocore').setLevel(logging.WARNING)
+    logging.getLogger('boto3').setLevel(logging.WARNING)
+    return logger

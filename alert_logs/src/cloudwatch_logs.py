@@ -5,10 +5,9 @@ import os
 
 import re
 
-from src.common_util import datetime_to_epoch, get_logs_client, get_s3_client, get_s3_resource, CHANGE_LINE
+from src.common_util import datetime_to_epoch, get_logs_client, get_s3_client, get_s3_resource, CHANGE_LINE, init_logger
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = init_logger()
 
 
 def get_log_groups() -> list:
