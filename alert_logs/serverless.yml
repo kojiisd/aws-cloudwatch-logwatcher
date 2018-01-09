@@ -71,7 +71,7 @@ functions:
     handler: src/alert_logs.lambda_handler_alert_logs
     description: 【バッチ】CloudWatchログ定期監視スクリプト(親)
     events:
-      - schedule: rate(1 hour)
+      - schedule: rate(1 days)
     timeout: 30
 
   filteredAlertLogs:
