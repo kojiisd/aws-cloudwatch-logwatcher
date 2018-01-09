@@ -27,12 +27,17 @@ def get_sns_client():
     client = boto3.session.Session().client('sns')
     return client
 
+def get_lambda_client():
+
+    client = boto3.session.Session().client('lambda')
+    return client
+
 
 def init_logger():
     """
-    Lambdaã‚ÅÀs‚·‚éÛ‚ÉADynamoDBÚ‘±ƒƒO‚È‚Ç•s—v‚ÈƒƒO‚ğo—Í‚µ‚È‚¢‚æ‚¤‚É‚·‚éB
+    Lambdaä¸Šã§å®Ÿè¡Œã™ã‚‹éš›ã«ã€DynamoDBæ¥ç¶šãƒ­ã‚°ãªã©ä¸è¦ãªãƒ­ã‚°ã‚’å‡ºåŠ›ã—ãªã„ã‚ˆã†ã«ã™ã‚‹ã€‚
 
-    :return: ƒƒOo—ÍƒIƒuƒWƒFƒNƒg
+    :return: ãƒ­ã‚°å‡ºåŠ›ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
     """
     logger = logging.getLogger()
     logger.setLevel(logging.INFO if 'LOG_LEVEL' not in os.environ else int(os.environ['LOG_LEVEL']))

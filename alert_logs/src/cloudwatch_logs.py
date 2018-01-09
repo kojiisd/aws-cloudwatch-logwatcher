@@ -1,22 +1,21 @@
 import logging
 from datetime import datetime, timedelta
-
 import os
-
 import re
 
-from src.common_util import datetime_to_epoch, get_logs_client, get_s3_client, get_s3_resource, CHANGE_LINE, init_logger
+from src.common_util import datetime_to_epoch, get_logs_client, get_s3_resource, CHANGE_LINE, init_logger
 
 logger = init_logger()
 
 
-def get_log_groups() -> list:
+def get_log_groups(prefix: str = '/aws/lambda') -> list:
     """
     Get all lambda log group list from cloudwatch.
 
+
+    :param prefix: prefix of group name
     :return: list of log groups
     """
-    prefix = '/aws/lambda'
     result = []
 
     client = get_logs_client()
@@ -124,7 +123,7 @@ def write_stream(group_name: str, start_time: int, end_time: int, log_stream):
     # name of file：[group name]_[stream name]_[created time].log（remove '/' because windows can't use it as path）
     file_name = '{}_{}_{}.log'.format(group_name, stream_name, log_timestamp).replace('/', '')
 
-    # ログを取得
+    # Get log
     logs = client.get_log_events(
         logGroupName=group_name,
         logStreamName=stream_name,
@@ -141,33 +140,24 @@ def write_stream(group_name: str, start_time: int, end_time: int, log_stream):
             f.write(message)
 
 
-def get_all_logs() -> list:
+def get_all_logs(prefix: str, start_time: int, end_time: int) -> list:
     """
     Get all latest logs from cloudwatch.
     And filter with regex, return log list.
 
+    :param prefix: target prefix
+    :param start_time: target start_time
+    :param end_time: target end_time
     :return: list of all latest filtered log str.
     """
 
-    result = True
     if 'ALERT_LOG_PATTERN' in os.environ:
         target_pattern = os.environ['ALERT_LOG_PATTERN']
         regex = re.compile(target_pattern)
     else:
         regex = None
 
-    log_groups = get_log_groups()
-    now_time = datetime.now()
-
-    # set last time this method performed to start time.
-    last_exec_time = get_last_exec_time()
-    if last_exec_time:
-        start_time = last_exec_time
-    else:
-        # default 1 day before
-        start_time = datetime_to_epoch(now_time - timedelta(days=1)) * 1000
-    # set now time to end time.
-    end_time = datetime_to_epoch(now_time) * 1000
+    log_groups = get_log_groups(prefix)
 
     result_list = []
     try:
@@ -181,11 +171,6 @@ def get_all_logs() -> list:
                     result_list.append(group_name + CHANGE_LINE + body_str)
     except:
         logger.exception('Failed getting logs')
-        result = False
-
-    if result:
-        # S3 上の前回実行時刻ファイルを更新する。
-        update_last_exec_time(end_time)
 
     return result_list
 
