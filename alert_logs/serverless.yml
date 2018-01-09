@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: alert-logs
+service: my-service
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -46,7 +46,7 @@ provider:
 #    variable1: value1
 
   environment:
-    ALERT_LOG_BUCKET: alert-logs-${self:provider.stage}
+    ALERT_LOG_BUCKET: ${self:service}-alert-logs-${self:provider.stage}
     ALERT_LOG_KEY: 'last_alert_updated_time'
     ALERT_LOG_PATTERN: 'Exception|Error'
     ALERT_LOG_TOPIC_ARN: 'arn:aws:sns:us-west-2:381354997016:tmp_mail_test'
@@ -68,14 +68,14 @@ provider:
 functions:
 
   alertLogs:
-    handler: src/tool/alert_logs.lambda_handler_alert_logs
+    handler: src/alert_logs.lambda_handler_alert_logs
     description: 【バッチ】CloudWatchログ定期監視スクリプト(親)
     events:
       - schedule: rate(1 hour)
     timeout: 30
 
   filteredAlertLogs:
-    handler: src/tool/alert_logs.lambda_handler_filtered_alert_logs
+    handler: src/alert_logs.lambda_handler_filtered_alert_logs
     description: 【バッチ】CloudWatchログ定期監視スクリプト(子)
     timeout: 300
 
@@ -115,7 +115,7 @@ resources:
     AlertLogs:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: alert-logs-${self:provider.stage}
+        BucketName: ${self:service}-alert-logs-${self:provider.stage}
 
     ### CloudWatch Logs ###
 
