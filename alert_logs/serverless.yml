@@ -45,7 +45,7 @@ provider:
 #    variable1: value1
 
   environment:
-    ALERT_LOG_BUCKET: 'alert-logs'
+    ALERT_LOG_BUCKET: alert-logs-${self:provider.stage}
     ALERT_LOG_KEY: 'last_alert_updated_time'
     ALERT_LOG_PATTERN: 'Exception|Error'
     ALERT_LOG_TOPIC_ARN: 'arn:aws:sns:us-west-2:381354997016:tmp_mail_test'
@@ -94,5 +94,20 @@ functions:
 #      variable2: value2
 
 # you can add CloudFormation resource templates here
-#resources:
-#  Resources:
+
+resources:
+  Resources:
+
+    ### S3 ###
+
+    AlertLogs:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: alert-logs-${self:provider.stage}
+
+    ### CloudWatch Logs ###
+
+    alertLogsLogGroup:
+      Properties:
+        RetentionInDays: 7
+
