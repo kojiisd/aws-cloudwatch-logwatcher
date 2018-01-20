@@ -45,7 +45,7 @@ def get_log_groups(prefix: str = '/aws/lambda') -> list:
     return result
 
 
-def get_group_log_streams(group_name: str, limit: int = 50) -> list:
+def get_group_log_streams(group_name: str, base_epoc_time: int, limit: int = 50) -> list:
     """
     Get cloudwatch log with specified group name.
 
@@ -61,7 +61,10 @@ def get_group_log_streams(group_name: str, limit: int = 50) -> list:
 
     result = []
     if response:
-        result = response.get('logStreams', [])
+        # filter files if it contain logs after start_time.
+        streams = [stream for stream in response.get('logStreams', []) if
+                   stream.get('lastEventTimestamp', 0) > base_epoc_time]
+        result = streams
     return result
 
 
@@ -163,12 +166,13 @@ def get_all_logs(prefix: str, start_time: int, end_time: int) -> list:
     try:
         for group in log_groups:
             group_name = group.get('logGroupName', '')
-            log_streams = get_group_log_streams(group_name, 1)
+            # get streams which havs logs of time later than start_time.
+            log_streams = get_group_log_streams(group_name, start_time)
             if log_streams:
-                log_stream = log_streams[0]
-                body_str = get_log_body(group_name, start_time, end_time, log_stream, regex)
-                if body_str:
-                    result_list.append(group_name + CHANGE_LINE + body_str)
+                for log_stream in log_streams:
+                    body_str = get_log_body(group_name, start_time, end_time, log_stream, regex)
+                    if body_str:
+                        result_list.append(group_name + CHANGE_LINE + body_str)
     except:
         logger.exception('Failed getting logs')
 
