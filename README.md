@@ -22,7 +22,7 @@ service: my-service
 →ユニークなサービス名に変更してください。
 
 environment:<br>
-    ALERT_LOG_BUCKET: alert-logs-${self:provider.stage}<br>→前回実行時刻を保存するS3バケット(任意。変更する場合、S3バケットが存在すること。)<br>
+    ALERT_LOG_BUCKET: ${self:service}-alert-logs-${self:provider.stage}<br>→前回実行時刻を保存するS3バケット(任意。変更する場合、S3バケットが存在すること。)<br>
     ALERT_LOG_KEY: 'last_alert_updated_time'<br>→前回実行時刻を保存するS3オブジェクトのキー名(任意)<br>
     ALERT_LOG_PATTERN: 'Exception|Error'<br>→通知対象とするキーワード(Python のregex用正規表現)。設定しないと全ログを通知<br>
     ALERT_LOG_TOPIC_ARN: 'arn:aws:sns:us-west-2:381354997016:tmp_mail_test'<br>→通知先メールトピックのARN(事前作製したTOPIC_ARNを設定してください。)<br>
