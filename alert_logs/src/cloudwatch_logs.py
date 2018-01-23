@@ -223,7 +223,7 @@ def update_last_exec_time(last_exec_time: int):
         object.put(
             Body=str(last_exec_time).encode('utf-8'),
             ContentEncoding='utf-8',
-            ContentType='text/plane'
+            ContentType='text/plain'
         )
     except:
         logger.exception('Failed updating time in s3.')
