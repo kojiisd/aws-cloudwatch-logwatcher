@@ -22,7 +22,7 @@ serverless.ymlファイルを編集して使ってください。
 # ユニークなサービス名に変更してください。
 service: my-service
 
-environment:<br>
+environment:
     # 前回実行時刻を保存するS3バケット(任意。変更する場合、S3バケットが存在すること。)
     ALERT_LOG_BUCKET: ${self:service}-alert-logs-${self:provider.stage}
     # 前回実行時刻を保存するS3オブジェクトのキー名(任意)
