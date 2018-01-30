@@ -40,7 +40,9 @@ environment:<br>
     
 その他必要な変更を行ってください。<br>
 たとえば、functions:の下記cron設定を変更することで、収集する周期を変更できます。
+~~~yaml:serverless.yml
 - schedule: rate(1 day)
+~~~
 
 ## Copyright<br>
 see ./LICENSE
