@@ -18,18 +18,25 @@ serverless.ymlファイルを編集して使ってください。
 # serverless.yml変更必須項目<br>
 下記環境変数を変更します。<br>
 
+~~~yaml:serverless.yml
+# ユニークなサービス名に変更してください。
 service: my-service
-→ユニークなサービス名に変更してください。
 
 environment:<br>
-    ALERT_LOG_BUCKET: ${self:service}-alert-logs-${self:provider.stage}<br>→前回実行時刻を保存するS3バケット(任意。変更する場合、S3バケットが存在すること。)<br>
-    ALERT_LOG_KEY: 'last_alert_updated_time'<br>→前回実行時刻を保存するS3オブジェクトのキー名(任意)<br>
-    ALERT_LOG_PATTERN: 'Exception|Error'<br>→通知対象とするキーワード(Python のregex用正規表現)。設定しないと全ログを通知<br>
-    ALERT_LOG_TOPIC_ARN: 'arn:aws:sns:us-west-2:381354997016:tmp_mail_test'<br>→通知先メールトピックのARN(事前作製したTOPIC_ARNを設定してください。)<br>
-    ALERT_LOG_SUBJECT: 'subject for cloudwatch alert.'<br>→通知メールの表題(任意)<br>
-    # ログ収集の粒度。カンマ区切りで複数指定可能。prefixごとの結果がメールで送信される。<br>
-    ALERT_LOGS_TARGET_PREFIX: '/aws/lambda'
-    
+    # 前回実行時刻を保存するS3バケット(任意。変更する場合、S3バケットが存在すること。)
+    ALERT_LOG_BUCKET: ${self:service}-alert-logs-${self:provider.stage}
+    # 前回実行時刻を保存するS3オブジェクトのキー名(任意)
+    ALERT_LOG_KEY: 'last_alert_updated_time'
+    # 通知対象とするキーワード(Python のregex用正規表現)。設定しないと全ログを通知
+    ALERT_LOG_PATTERN: 'Exception|Error'
+    # 通知先メールトピックのARN(事前作製したTOPIC_ARNを設定してください。)
+    ALERT_LOG_TOPIC_ARN: 'arn:aws:sns:us-west-2:381354997016:tmp_mail_test'
+    # 通知メールの表題(任意)
+    ALERT_LOG_SUBJECT: 'subject for cloudwatch alert.'
+    # ログ収集の粒度。カンマ区切りで複数指定可能。prefixごとの結果がメールで送信される。
+    ALERT_LOGS_TARGET_PREFIX: '/aws/lambda'
+~~~
+
     
 その他必要な変更を行ってください。<br>
 たとえば、functions:の下記cron設定を変更することで、収集する周期を変更できます。
