@@ -51,11 +51,14 @@ provider:
     ALERT_LOG_PATTERN: 'Exception|Error'
     ALERT_LOG_TOPIC_ARN: 'arn:aws:sns:us-west-2:381354997016:tmp_mail_test'
     ALERT_LOG_SUBJECT: 'subject for cloudwatch alert.'
-    # ƒƒOûW‚Ì—±“xBƒJƒ“ƒ}‹æØ‚è‚Å•¡”w’è‰Â”\Bprefix‚²‚Æ‚ÌŒ‹‰Ê‚ªƒ[ƒ‹‚Å‘—M‚³‚ê‚éB
+    # ãƒ­ã‚°åé›†ã®ç²’åº¦ã€‚ã‚«ãƒ³ãƒåŒºåˆ‡ã‚Šã§è¤‡æ•°æŒ‡å®šå¯èƒ½ã€‚prefixã”ã¨ã®çµæœãŒãƒ¡ãƒ¼ãƒ«ã§é€ä¿¡ã•ã‚Œã‚‹ã€‚
     ALERT_LOGS_TARGET_PREFIX: '/aws/lambda'
 
     FILTERED_ALERT_LOGS: ${self:service}-${self:provider.stage}-filteredAlertLogs
 
+    THRESHOLD_VALUE: 0.5
+    THRESHOLD_TIME: 5
+    DYNAMODB_TABLE: 'CapacityUnitsTest'
 # you can add packaging information here
 #package:
 #  include:
@@ -69,16 +72,22 @@ functions:
 
   alertLogs:
     handler: src/alert_logs.lambda_handler_alert_logs
-    description: yƒoƒbƒ`zCloudWatchƒƒO’èŠúŠÄ‹ƒXƒNƒŠƒvƒg(e)
+    description: ã€ãƒãƒƒãƒã€‘CloudWatchãƒ­ã‚°å®šæœŸç›£è¦–ã‚¹ã‚¯ãƒªãƒ—ãƒˆ(è¦ª)
     events:
       - schedule: rate(1 day)
     timeout: 30
 
   filteredAlertLogs:
     handler: src/alert_logs.lambda_handler_filtered_alert_logs
-    description: yƒoƒbƒ`zCloudWatchƒƒO’èŠúŠÄ‹ƒXƒNƒŠƒvƒg(q)
+    description: ã€ãƒãƒƒãƒã€‘CloudWatchãƒ­ã‚°å®šæœŸç›£è¦–ã‚¹ã‚¯ãƒªãƒ—ãƒˆ(å­)
     timeout: 300
 
+  dynamoDBMonitor:
+    handler: src/dynamodb_monitor.monitor_dynamodb
+    description: DynamoDBã®èª­ã¿ï¼æ›¸ãã‚­ãƒ£ãƒ‘ã‚·ãƒ†ã‚£ãƒ¦ãƒ‹ãƒƒãƒˆã‚’å®šæœŸçš„ã«ç›£è¦–ã™ã‚‹ã‚¹ã‚¯ãƒªãƒ—ãƒˆ
+    events:
+      - schecule: rate(1 hour)
+    timeout: 30
 
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)
