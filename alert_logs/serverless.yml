@@ -36,6 +36,8 @@ provider:
         - "logs:GetLogEvents"
         - "lambda:InvokeFunction"
         - "sns:Publish"
+        - "dynamodb:DescribeTable"
+        - "cloudwatch:GetMetricStatistics"
       Resource: "*"
 
 
@@ -58,7 +60,7 @@ provider:
 
     THRESHOLD_VALUE: 0.5
     THRESHOLD_TIME: 5
-    DYNAMODB_TABLE: 'CapacityUnitsTest'
+    DYNAMODB_TABLE: 'test_table'
 # you can add packaging information here
 #package:
 #  include:
@@ -86,7 +88,7 @@ functions:
     handler: src/dynamodb_monitor.monitor_dynamodb
     description: DynamoDBの読み／書きキャパシティユニットを定期的に監視するスクリプト
     events:
-      - schecule: rate(1 hour)
+      - schedule: rate(1 hour)
     timeout: 30
 
 #      - s3: ${env:BUCKET}

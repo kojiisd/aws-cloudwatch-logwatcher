@@ -1,12 +1,12 @@
 {
   "service": {
-    "service": "alert-logs",
+    "service": "kojiisd-service",
     "serviceObject": {
-      "name": "alert-logs"
+      "name": "kojiisd-service"
     },
     "provider": {
       "stage": "dev",
-      "region": "us-west-2",
+      "region": "us-east-1",
       "variableSyntax": "\\${([ ~:a-zA-Z0-9._'\",\\-\\/\\(\\)]+?)}",
       "name": "aws",
       "runtime": "python3.6",
@@ -19,6 +19,7 @@
             "logs:DescribeLogGroups",
             "logs:DescribeLogStreams",
             "logs:GetLogEvents",
+            "lambda:InvokeFunction",
             "sns:Publish"
           ],
           "Resource": "*"
@@ -26,11 +27,16 @@
       ],
       "timeout": 10,
       "environment": {
-        "ALERT_LOG_BUCKET": "alert-logs",
+        "ALERT_LOG_BUCKET": "kojiisd-service-alert-logs-dev",
         "ALERT_LOG_KEY": "last_alert_updated_time",
         "ALERT_LOG_PATTERN": "Exception|Error",
-        "ALERT_LOG_TOPIC_ARN": "arn:aws:sns:us-west-2:381354997016:tmp_mail_test",
-        "ALERT_LOG_SUBJECT": "subject for cloudwatch alert."
+        "ALERT_LOG_TOPIC_ARN": "arn:aws:sns:us-east-1:803928280252:DynamoDBCapacityUnitMonitoring",
+        "ALERT_LOG_SUBJECT": "subject for cloudwatch alert.",
+        "ALERT_LOGS_TARGET_PREFIX": "/aws/lambda",
+        "FILTERED_ALERT_LOGS": "kojiisd-service-dev-filteredAlertLogs",
+        "THRESHOLD_VALUE": 0.5,
+        "THRESHOLD_TIME": 5,
+        "DYNAMODB_TABLE": "CapacityUnitsTest"
       },
       "versionFunctions": true,
       "remoteFunctionData": null,
@@ -44,7 +50,21 @@
           "AlertLogsLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/alert-logs-dev-alertLogs"
+              "LogGroupName": "/aws/lambda/kojiisd-service-dev-alertLogs",
+              "RetentionInDays": 7
+            }
+          },
+          "FilteredAlertLogsLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/kojiisd-service-dev-filteredAlertLogs",
+              "RetentionInDays": 7
+            }
+          },
+          "DynamoDBMonitorLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/kojiisd-service-dev-dynamoDBMonitor"
             }
           },
           "IamRoleLambdaExecution": {
@@ -73,7 +93,7 @@
                       "-",
                       [
                         "dev",
-                        "alert-logs",
+                        "kojiisd-service",
                         "lambda"
                       ]
                     ]
@@ -88,7 +108,13 @@
                         ],
                         "Resource": [
                           {
-                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/alert-logs-dev-alertLogs:*"
+                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/kojiisd-service-dev-alertLogs:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/kojiisd-service-dev-filteredAlertLogs:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/kojiisd-service-dev-dynamoDBMonitor:*"
                           }
                         ]
                       },
@@ -99,7 +125,13 @@
                         ],
                         "Resource": [
                           {
-                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/alert-logs-dev-alertLogs:*:*"
+                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/kojiisd-service-dev-alertLogs:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/kojiisd-service-dev-filteredAlertLogs:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/kojiisd-service-dev-dynamoDBMonitor:*:*"
                           }
                         ]
                       },
@@ -111,6 +143,7 @@
                           "logs:DescribeLogGroups",
                           "logs:DescribeLogStreams",
                           "logs:GetLogEvents",
+                          "lambda:InvokeFunction",
                           "sns:Publish"
                         ],
                         "Resource": "*"
@@ -124,9 +157,9 @@
                 "Fn::Join": [
                   "-",
                   [
-                    "alert-logs",
+                    "kojiisd-service",
                     "dev",
-                    "us-west-2",
+                    "us-east-1",
                     "lambdaRole"
                   ]
                 ]
@@ -140,9 +173,9 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/alert-logs/dev/1515403424591-2018-01-08T09:23:44.591Z/alert-logs.zip"
+                "S3Key": "serverless/kojiisd-service/dev/1524024952803-2018-04-18T04:15:52.803Z/kojiisd-service.zip"
               },
-              "FunctionName": "alert-logs-dev-alertLogs",
+              "FunctionName": "kojiisd-service-dev-alertLogs",
               "Handler": "src/alert_logs.lambda_handler_alert_logs",
               "MemorySize": 1024,
               "Role": {
@@ -152,14 +185,20 @@
                 ]
               },
               "Runtime": "python3.6",
-              "Timeout": 300,
+              "Timeout": 30,
+              "Description": "【バッチ】CloudWatchログ定期監視スクリプト(親)",
               "Environment": {
                 "Variables": {
-                  "ALERT_LOG_BUCKET": "alert-logs",
+                  "ALERT_LOG_BUCKET": "kojiisd-service-alert-logs-dev",
                   "ALERT_LOG_KEY": "last_alert_updated_time",
                   "ALERT_LOG_PATTERN": "Exception|Error",
-                  "ALERT_LOG_TOPIC_ARN": "arn:aws:sns:us-west-2:381354997016:tmp_mail_test",
-                  "ALERT_LOG_SUBJECT": "subject for cloudwatch alert."
+                  "ALERT_LOG_TOPIC_ARN": "arn:aws:sns:us-east-1:803928280252:DynamoDBCapacityUnitMonitoring",
+                  "ALERT_LOG_SUBJECT": "subject for cloudwatch alert.",
+                  "ALERT_LOGS_TARGET_PREFIX": "/aws/lambda",
+                  "FILTERED_ALERT_LOGS": "kojiisd-service-dev-filteredAlertLogs",
+                  "THRESHOLD_VALUE": 0.5,
+                  "THRESHOLD_TIME": 5,
+                  "DYNAMODB_TABLE": "CapacityUnitsTest"
                 }
               }
             },
@@ -168,20 +207,125 @@
               "IamRoleLambdaExecution"
             ]
           },
-          "AlertLogsLambdaVersionDY2G34hBwCNBQoeEXy5R1bMHAqihuNzj7k4BEHpxg": {
+          "AlertLogsLambdaVersionqtKaS5LdWbEjLM60hauTtLz42o9cuYkfsQKNpkiwY": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "AlertLogsLambdaFunction"
               },
-              "CodeSha256": "DY2/G34hBwCNBQoeEXy5R1bMHAqihuNzj7k4B+EHpxg="
+              "CodeSha256": "qtK/aS5LdWbEjLM60+hauTtLz42o9cuYkfsQKNpkiwY=",
+              "Description": "【バッチ】CloudWatchログ定期監視スクリプト(親)"
+            }
+          },
+          "FilteredAlertLogsLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/kojiisd-service/dev/1524024952803-2018-04-18T04:15:52.803Z/kojiisd-service.zip"
+              },
+              "FunctionName": "kojiisd-service-dev-filteredAlertLogs",
+              "Handler": "src/alert_logs.lambda_handler_filtered_alert_logs",
+              "MemorySize": 1024,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              },
+              "Runtime": "python3.6",
+              "Timeout": 300,
+              "Description": "【バッチ】CloudWatchログ定期監視スクリプト(子)",
+              "Environment": {
+                "Variables": {
+                  "ALERT_LOG_BUCKET": "kojiisd-service-alert-logs-dev",
+                  "ALERT_LOG_KEY": "last_alert_updated_time",
+                  "ALERT_LOG_PATTERN": "Exception|Error",
+                  "ALERT_LOG_TOPIC_ARN": "arn:aws:sns:us-east-1:803928280252:DynamoDBCapacityUnitMonitoring",
+                  "ALERT_LOG_SUBJECT": "subject for cloudwatch alert.",
+                  "ALERT_LOGS_TARGET_PREFIX": "/aws/lambda",
+                  "FILTERED_ALERT_LOGS": "kojiisd-service-dev-filteredAlertLogs",
+                  "THRESHOLD_VALUE": 0.5,
+                  "THRESHOLD_TIME": 5,
+                  "DYNAMODB_TABLE": "CapacityUnitsTest"
+                }
+              }
+            },
+            "DependsOn": [
+              "FilteredAlertLogsLogGroup",
+              "IamRoleLambdaExecution"
+            ]
+          },
+          "FilteredAlertLogsLambdaVersionqtKaS5LdWbEjLM60hauTtLz42o9cuYkfsQKNpkiwY": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "FilteredAlertLogsLambdaFunction"
+              },
+              "CodeSha256": "qtK/aS5LdWbEjLM60+hauTtLz42o9cuYkfsQKNpkiwY=",
+              "Description": "【バッチ】CloudWatchログ定期監視スクリプト(子)"
+            }
+          },
+          "DynamoDBMonitorLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/kojiisd-service/dev/1524024952803-2018-04-18T04:15:52.803Z/kojiisd-service.zip"
+              },
+              "FunctionName": "kojiisd-service-dev-dynamoDBMonitor",
+              "Handler": "src/dynamodb_monitor.monitor_dynamodb",
+              "MemorySize": 1024,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              },
+              "Runtime": "python3.6",
+              "Timeout": 30,
+              "Description": "DynamoDBの読み／書きキャパシティユニットを定期的に監視するスクリプト",
+              "Environment": {
+                "Variables": {
+                  "ALERT_LOG_BUCKET": "kojiisd-service-alert-logs-dev",
+                  "ALERT_LOG_KEY": "last_alert_updated_time",
+                  "ALERT_LOG_PATTERN": "Exception|Error",
+                  "ALERT_LOG_TOPIC_ARN": "arn:aws:sns:us-east-1:803928280252:DynamoDBCapacityUnitMonitoring",
+                  "ALERT_LOG_SUBJECT": "subject for cloudwatch alert.",
+                  "ALERT_LOGS_TARGET_PREFIX": "/aws/lambda",
+                  "FILTERED_ALERT_LOGS": "kojiisd-service-dev-filteredAlertLogs",
+                  "THRESHOLD_VALUE": 0.5,
+                  "THRESHOLD_TIME": 5,
+                  "DYNAMODB_TABLE": "CapacityUnitsTest"
+                }
+              }
+            },
+            "DependsOn": [
+              "DynamoDBMonitorLogGroup",
+              "IamRoleLambdaExecution"
+            ]
+          },
+          "DynamoDBMonitorLambdaVersionqtKaS5LdWbEjLM60hauTtLz42o9cuYkfsQKNpkiwY": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "DynamoDBMonitorLambdaFunction"
+              },
+              "CodeSha256": "qtK/aS5LdWbEjLM60+hauTtLz42o9cuYkfsQKNpkiwY=",
+              "Description": "DynamoDBの読み／書きキャパシティユニットを定期的に監視するスクリプト"
             }
           },
           "AlertLogsEventsRuleSchedule1": {
             "Type": "AWS::Events::Rule",
             "Properties": {
-              "ScheduleExpression": "rate(1 hours)",
+              "ScheduleExpression": "rate(1 day)",
               "State": "ENABLED",
               "Targets": [
                 {
@@ -214,6 +358,12 @@
                 ]
               }
             }
+          },
+          "AlertLogs": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "kojiisd-service-alert-logs-dev"
+            }
           }
         },
         "Outputs": {
@@ -225,7 +375,19 @@
           "AlertLogsLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "AlertLogsLambdaVersionDY2G34hBwCNBQoeEXy5R1bMHAqihuNzj7k4BEHpxg"
+              "Ref": "AlertLogsLambdaVersionqtKaS5LdWbEjLM60hauTtLz42o9cuYkfsQKNpkiwY"
+            }
+          },
+          "FilteredAlertLogsLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "FilteredAlertLogsLambdaVersionqtKaS5LdWbEjLM60hauTtLz42o9cuYkfsQKNpkiwY"
+            }
+          },
+          "DynamoDBMonitorLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "DynamoDBMonitorLambdaVersionqtKaS5LdWbEjLM60hauTtLz42o9cuYkfsQKNpkiwY"
             }
           }
         }
@@ -251,21 +413,65 @@
     "functions": {
       "alertLogs": {
         "handler": "src/alert_logs.lambda_handler_alert_logs",
+        "description": "【バッチ】CloudWatchログ定期監視スクリプト(親)",
         "events": [
           {
-            "schedule": "rate(1 hours)"
+            "schedule": "rate(1 day)"
           }
         ],
+        "timeout": 30,
+        "name": "kojiisd-service-dev-alertLogs",
+        "package": {},
+        "vpc": {}
+      },
+      "filteredAlertLogs": {
+        "handler": "src/alert_logs.lambda_handler_filtered_alert_logs",
+        "description": "【バッチ】CloudWatchログ定期監視スクリプト(子)",
         "timeout": 300,
-        "name": "alert-logs-dev-alertLogs",
+        "events": [],
+        "name": "kojiisd-service-dev-filteredAlertLogs",
+        "package": {},
+        "vpc": {}
+      },
+      "dynamoDBMonitor": {
+        "handler": "src/dynamodb_monitor.monitor_dynamodb",
+        "description": "DynamoDBの読み／書きキャパシティユニットを定期的に監視するスクリプト",
+        "events": [
+          {
+            "schecule": "rate(1 hour)"
+          }
+        ],
+        "timeout": 30,
+        "name": "kojiisd-service-dev-dynamoDBMonitor",
         "package": {},
         "vpc": {}
       }
     },
-    "artifact": "C:\\work\\serverless\\alert_logs\\.serverless\\alert-logs.zip"
+    "resources": {
+      "Resources": {
+        "AlertLogs": {
+          "Type": "AWS::S3::Bucket",
+          "Properties": {
+            "BucketName": "kojiisd-service-alert-logs-dev"
+          }
+        },
+        "AlertLogsLogGroup": {
+          "Properties": {
+            "RetentionInDays": 7
+          }
+        },
+        "FilteredAlertLogsLogGroup": {
+          "Properties": {
+            "RetentionInDays": 7
+          }
+        }
+      },
+      "Outputs": {}
+    },
+    "artifact": "/Users/KojiIshida/Documents/workspace/personal_git/kojiisd/aws-cloudwatch-logwatcher/alert_logs/.serverless/kojiisd-service.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/alert-logs/dev/1515403424591-2018-01-08T09:23:44.591Z",
-    "artifact": "alert-logs.zip"
+    "artifactDirectoryName": "serverless/kojiisd-service/dev/1524024952803-2018-04-18T04:15:52.803Z",
+    "artifact": "kojiisd-service.zip"
   }
 }

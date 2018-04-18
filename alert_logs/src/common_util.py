@@ -32,6 +32,13 @@ def get_lambda_client():
     client = boto3.session.Session().client('lambda')
     return client
 
+def get_cloudwatch_client():
+    client = boto3.session.Session().client('cloudwatch')
+    return client
+
+def get_dynamodb_client():
+    client = boto3.session.Session().client('dynamodb')
+    return client
 
 def init_logger():
     """
